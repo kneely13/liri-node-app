@@ -10,7 +10,7 @@ var movieName = process.argv[3];
 var trackName = process.argv[3];
 var liriReturn = process.argv[2];
 var moment = require('moment');
-// moment().format('MM/DD/YYYY');
+
 
 switch(liriReturn){
   case "concert-this":
@@ -92,10 +92,13 @@ function concertThis(){
 
     if(!error && response.statusCode === 200) {
       var artistData= JSON.parse(body);
+
+      
+      // console.log(artistData[0].venue.name);
       var queryUrlResults = 
-      "Venue's Name" + artistData.Name + "\n" +
-      "Venue Location" + artistData.Venue + "\n" +
-      "Date of the Event" + artistData.date.moment().format('MM/DD/YYYY'); + "\n" 
+      "Venue's Name: " + artistData[0].venue.name + "\n" +
+      "Venue Location: " + artistData[0].venue.city + "\n" +
+      "Date of the Event: " + moment(artistData[0].datetime).format("YYYY MM DD") + "\n" 
     
       console.log(queryUrlResults);
 
@@ -153,6 +156,13 @@ function doWhatSays(){
   fs.readFile("random.txt", "utf-8", function(error, data) {
     if(!error) {
        console.log("\n"+ data);
+
+       if(data.search("I Want it That Way"))
+       {
+        var trackName = "I Want it That Way";
+        console.log(spotifyThisSong(trackName));
+       }
+       
     }else{
       console.log(error);
     }
