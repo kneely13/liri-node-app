@@ -1,15 +1,18 @@
-require("dotenv").config();
+require("dotenv").config(); //This code is to read and set any environment variables with the dotenv package:
 
+//Code to import the keys.js file and store that in a variable
 var keys = require("./keys.js");
 var fs = require("fs");
 var Spotify = require('node-spotify-api');
 var spotify = new Spotify(keys.spotify);
 var request = require("request");
 var movieName = process.argv[3];
+var trackName = process.argv[3];
 var liriReturn = process.argv[2];
+var moment = require('moment');
+// moment().format('MM/DD/YYYY');
 
-switch(liriReturn)
-{
+switch(liriReturn){
   case "concert-this":
   concertThis();
   break;
@@ -26,93 +29,134 @@ switch(liriReturn)
   doWhatSays();
   break;
 
-    default: console.log("\n"+
-    "Type one of the phrases into the terminal: "+"\n"+
-    "\nnode liri.js concert-this " +
-    "\nnode liri.js spotify-this-song "+
-    "\nnode liri.js movie-this "+
-    "\nnode liri.js do-what-it-says "+"\n"+"\n"+
-    "If you like to be specific you can add more info"+"\n"+
-    "\nnode liri.js concert-this <artist/band name here> " +
-    "\nnode liri.js spotify-this-song '<any song name here>' (TIP: Use quotes for multiword song titles!!!)"+
-    "\nnode liri.js movie-this '<any movie name here>' "+
-    "\nnode liri.js do-what-it-says "+"\n"); 
+  default: console.log("\n"+
+    "1.) Type one of the phrases into the terminal: "+"\n"+
+    "\nnode liri.js concert-this (For event dates of artist or bands) " +
+    "\nnode liri.js spotify-this-song (For info about songs) "+
+    "\nnode liri.js movie-this (For info about movies)"+"\n"+"\n"+"\n"+
+    // "\nnode liri.js do-what-it-says (Read about this command below) "+"\n"+"\n"+
+    "2.) If you like to be specific, add more info to the commands above: "+"FOR EXAMPLES TYPE: node liri.js do-what-it-says "+"\n"+
+    "\nconcert-this <artist/band name here> "+"\n" +
+    "\nspotify-this-song '<any song name here>' \n(TIP: Use quotes for multiword song titles!!!)"+ "\n" +
+    "\nmovie-this '<any movie name here>' "+"\n"
+  ); 
 };
 
-var spotifyThisSong = function(songName){
-  var songName = process.argv[3];
-  
-  if(!songName){
-    songName="The Sign";
+function spotifyThisSong(trackName) {
+  var trackName = process.argv[3];
+  // var Spotify = require('node-spotify-api');
+  // var spotify = new Spotify(keys.spotify);
+
+  if(!trackName) {
+    trackName ="The Sign";
   };
-  sonfRequest = songName;
+
+  songRequest = trackName;
   spotify.search({
     type: "track",
-    query: "songRequest",
-  }),
-    function (err, data) 
-    {
-      if(!err)
-      {
-        var songInfo = data.songs.items;
-        for(var i=0;i<5;i++)
-        {
-          if(songInfo[i] !== undefined) {
+    query: songRequest
+  },
+    function (err, data) {
+      if(!err){
+        var trackInfo = data.tracks.items;
+        for(var i = 0; i < 5; i++){
+          if(trackInfo[i] != undefined) {
             var spotifyResults =
-            "Artist:" +songInfo[i].artists[0].name + "\n" + 
-            "Song: " + songInfo[i].name +
-            "\n" +
-            "Preview URL: "+ songInfo[i].preview_url + "\n" +
-            "Album: " + songInfo[i].album.name + "\n"
+              "\nArtist: " + trackInfo[i].artists[0].name + "\n" + 
+              "Song: " + trackInfo[i].name +
+              "\n" +
+              "Preview URL: " + trackInfo[i].preview_url + "\n" +
+              "Album: " + trackInfo[i].album.name + "\n"
 
             console.log(spotifyResults);
-            console.log('------------------')
-             
+            console.log(' ');
           };
         };
-      }
-      else
-      {
+      } else {
         console.log("There was a error: " + err);
         return;
       };
-    }
+    });
 
 };
 
+//request to the bandsInTown API for an artist and information about each event 
+
+function concertThis(){
+
+  artist = process.argv[3];
+
+  var queryUrl = "https://rest.bandsintown.com/artists/" + artist + "/events?app_id=codingbootcamp"
+
+  request(queryUrl, function(error, response, body){
+
+    if(!error && response.statusCode === 200) {
+      var artistData= JSON.parse(body);
+      var queryUrlResults = 
+      "Venue's Name" + artistData.Name + "\n" +
+      "Venue Location" + artistData.Venue + "\n" +
+      "Date of the Event" + artistData.date.moment().format('MM/DD/YYYY'); + "\n" 
+    
+      console.log(queryUrlResults);
+
+    }
+    else{
+      console.log("There was a error: " + error);
+        return;
+    }
+  })
+
+
+}
+
 //request to OMDB API with the movie specified
 
-function movieThis()
-{
-  var queryURL = "http://www.omdbapi.com/?t=" + movieName + "&y=&plot=short&apikey=trilogy"
+function movieThis(movieName) {
+  
+  var movieName = process.argv[3];
+  
+  if(!movieName) {
+    movieName ="Mr. Nobody";
+  };
 
-  request(queryURL, function (error, response, body)
-  {
+  var queryUrl = "http://www.omdbapi.com/?t=" + movieName + "&y=&plot=short&apikey=trilogy";
+
+  request(queryUrl, function (error, response, body) {
 
     // if sucess which is 200
     if(!error && response.statusCode === 200) {
 
         //pulling request data with the following syntax
         var myMovieData = JSON.parse(body);
-        var queryURLResults =
-        "Title: " + myMovieData.Title + "\n" + 
-        "Year: " + myMovieData.Year + "\n" + 
-        "IMDB Rated: " + myMovieData.Ratings[0].Value + "\n" + 
-        "Rotten Tomatoes Rating: " + myMovieData.Ratings[1].Value + "\n" + 
-        "Country Produced: " + myMovieData.Country + "\n" + 
-        "Language: " + myMovieData.Language + "\n" + 
-        "Plot: " + myMovieData.Plot + "\n" + 
-        "Actors: " + myMovieData.Actors + "\n" 
+        var queryUrlResults =
+          "Title: " + myMovieData.Title + "\n" + 
+          "Year: " + myMovieData.Year + "\n" + 
+          "IMDB Rated: " + myMovieData.Ratings[0].Value + "\n" + 
+          "Rotten Tomatoes Rating: " + myMovieData.Ratings[1].Value + "\n" + 
+          "Country Produced: " + myMovieData.Country + "\n" + 
+          "Language: " + myMovieData.Language + "\n" + 
+          "Plot: " + myMovieData.Plot + "\n" + 
+          "Actors: " + myMovieData.Actors + "\n" 
 
-        console.log(queryURLResults);
-    }
-    else
-    {
+        console.log(queryUrlResults);
+    } else {
         console.log("There was a error: " + err);
         return;
     };
   
-  }
+  });
 
-)}
+}
 
+function doWhatSays(){
+
+  fs.readFile("random.txt", "utf-8", function(error, data) {
+    if(!error) {
+       console.log("\n"+ data);
+    }else{
+      console.log(error);
+    }
+  })
+
+
+}
